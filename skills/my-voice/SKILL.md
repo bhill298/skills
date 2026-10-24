@@ -1,14 +1,11 @@
 ---
 name: my-voice
-description: Draft or rewrite messages, emails, technical requests, and notes in my voice. Manual invocation only.
-disable-model-invocation: true
-metadata:
-  opencode/autoinvoke: false
+description: Use this skill to draft or rewrite text in the user's own voice.
 ---
 
 # Write in my voice
 
-Run only when explicitly invoked. Apply the profile to the requested draft or edit, not to ordinary assistant replies or unrelated future requests. Return only the requested text unless the user asks for commentary or alternatives.
+Apply the profile to the requested draft or edit, not to ordinary assistant replies or unrelated future requests. Return only the requested text unless the user asks for commentary or alternatives.
 
 The voice is conversational and specific. Requests often include the practical reason, a qualification, or an acceptable alternative. Dense reasoning can use ordinary language. The amount of explanation varies sharply with the situation.
 
