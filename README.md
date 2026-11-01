@@ -14,6 +14,27 @@ supporting files. No submodules, symlinks, or post-clone downloads are required.
 Use `git pull` to receive updates committed to this repository. Cloning does not
 automatically install the skills into an agent application.
 
+## Install Superpowers skills
+
+Use [bhill298/superpowers-lite](https://github.com/bhill298/superpowers-lite)
+to install Superpowers skills. It is maintained separately and is not vendored
+in this repository. Follow its
+[installation instructions](https://github.com/bhill298/superpowers-lite#install)
+for supported agents, options, updates, and removal.
+
+For example, with Python 3.11+ installed, clone it into a separate directory and
+preview a Codex installation before applying it:
+
+```sh
+git clone https://github.com/bhill298/superpowers-lite.git
+cd superpowers-lite
+python superpowers-lite.py --only codex --dry-run
+python superpowers-lite.py --only codex
+```
+
+Run these commands from outside this repository to keep the checkouts separate.
+Use `python3` where appropriate, and restart affected agent sessions afterward.
+
 ## Vendored skills
 
 The following folders under `skills/` come from
