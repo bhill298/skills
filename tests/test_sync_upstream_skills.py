@@ -32,7 +32,7 @@ class SyncTests(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def run_sync(self, files=None, commit=None):
+    def run_sync(self, files=None, commit=None, latest="a" * 40):
         files = files or {"SKILL.md": b"Example\n", "FORMAT.md": b"Format\n"}
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
@@ -40,8 +40,33 @@ class SyncTests(unittest.TestCase):
             archive.writestr("repo/unselected/SKILL.md", "Do not import")
             for name, data in files.items():
                 archive.writestr("repo/skills/example/" + name, data)
-        with patch.object(sync.urllib.request, "urlopen", return_value=io.BytesIO(buffer.getvalue())):
+        with patch.object(sync, "latest_commit", return_value=latest), patch.object(
+            sync.urllib.request, "urlopen", return_value=io.BytesIO(buffer.getvalue())
+        ):
             sync.sync(commit)
+
+    def test_default_branch_tip_is_resolved_including_branch_slashes(self):
+        responses = [io.BytesIO(b'{"default_branch":"release/stable"}'),
+                     io.BytesIO(json.dumps({"sha": "b" * 40}).encode())]
+        with patch.object(sync.urllib.request, "urlopen", side_effect=responses) as request:
+            self.assertEqual(sync.latest_commit("example/skills"), "b" * 40)
+        self.assertEqual(request.call_args_list[1].args[0].full_url,
+                         "https://api.github.com/repos/example/skills/commits/release%2Fstable")
+
+    def test_new_upstream_commit_without_import_changes_is_noop(self):
+        self.run_sync()
+        before = {p.relative_to(self.root): p.read_bytes()
+                  for p in self.root.rglob("*") if p.is_file()}
+        self.run_sync(latest="b" * 40)
+        after = {p.relative_to(self.root): p.read_bytes()
+                 for p in self.root.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
+
+    def test_default_tip_updates_changed_import_and_provenance(self):
+        self.run_sync()
+        self.run_sync({"SKILL.md": b"New tip\n"}, latest="c" * 40)
+        self.assertEqual(json.loads(self.manifest.read_text())["commit"], "c" * 40)
+        self.assertEqual((self.root / "skills/example/SKILL.md").read_bytes(), b"New tip\n")
 
     def test_import_repeat_and_update_removes_obsolete_files(self):
         self.run_sync()

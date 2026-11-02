@@ -58,8 +58,8 @@ invocation mechanism may require adaptation; vendoring does not translate them.
 
 ### Dependency audit
 
-At the pinned revision, the selected set contains all named skill dependencies and
-bundled file references:
+At the initially audited revision (`4ae2317ddb22b046e26455e4f9c9b3aaaf62212d`),
+the selected set contained all named skill dependencies and bundled file references:
 
 | Skill | Dependencies and workspace references |
 | --- | --- |
@@ -81,20 +81,40 @@ Maintainers need Python 3.9+ and network access; no third-party Python packages
 are required. Run from the repository root (use `python3` if appropriate):
 
 ```sh
-# Reproduce the currently pinned import:
+# Fetch the latest files from the upstream repository's default branch:
 python scripts/sync-upstream-skills.py
 
-# Update to a reviewed upstream revision (replace the placeholder):
+# Optional: import a specific revision instead (replace the placeholder):
 python scripts/sync-upstream-skills.py --commit FULL_40_CHARACTER_COMMIT_SHA
 
 git diff --check
 git diff
 ```
 
-Choose a full commit SHA from the upstream repository's commit history. The script
-downloads that revision's archive and copies only the selected folders and license
-into this repository. It also updates the manifest. Review and commit the skill,
-license, and manifest changes together; future clones receive those exact files.
+The script discovers the upstream default branch (normally `main`) on each run,
+resolves its current tip, and downloads that revision's archive. It copies only
+the selected folders and license into this repository. The manifest's commit is
+provenance for the last changed import, not a pin controlling future updates.
+If those files are unchanged, nothing is written, even if upstream has new commits.
+For manual updates, review and commit the imported files and manifest together.
+Future clones receive those committed files.
+
+### Automatic updates
+
+[Sync upstream skills](.github/workflows/sync-upstream-skills.yml) runs weekly at
+Friday 08:23 UTC and can also be started from GitHub's Actions tab. It runs the regression
+tests, syncs upstream, and commits and pushes changed imports directly to this
+repository's default branch (`main`). It does not open a PR. Changes to other
+upstream files do not produce a commit here; imported additions, edits, deletions,
+or license changes do. The recorded SHA changes only with an actual import change.
+
+The workflow starts operating once it is pushed to the default branch with GitHub
+Actions enabled. It uses the built-in `GITHUB_TOKEN` with `contents: write`; no
+personal token is needed. Repository rules must allow that token to push directly
+to the default branch. A rejected push or a concurrent branch update fails the run
+without force-pushing; the next scheduled run retries from a fresh checkout.
+GitHub may delay scheduled runs and may disable schedules in public repositories
+after 60 days without repository activity. Clones and local pulls need no hooks.
 
 The script refuses to overwrite modified, missing, or extra local files in the
 managed destinations. Hash comparisons tolerate Git's CRLF/LF checkout conversion.

@@ -1,17 +1,35 @@
-"""Vendor selected skill folders from a pinned GitHub archive (Python 3.9+)."""
+"""Vendor selected skills from the upstream default branch (Python 3.9+)."""
 
 import argparse
 import hashlib
 import io
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import urllib.request
+import urllib.parse
 import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "upstream" / "sources.json"
+
+
+def github_json(path):
+    headers = {"User-Agent": "skills-vendor-sync", "Accept": "application/vnd.github+json"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(f"https://api.github.com/{path}", headers=headers)
+    with urllib.request.urlopen(request, timeout=60) as response:
+        return json.load(response)
+
+
+def latest_commit(repo):
+    branch = github_json(f"repos/{repo}")["default_branch"]
+    ref = urllib.parse.quote(branch, safe="")
+    return github_json(f"repos/{repo}/commits/{ref}")["sha"]
 
 
 def digest(data):
@@ -36,8 +54,7 @@ def local_path(relative):
 
 def sync(commit=None):
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    commit = commit or manifest["commit"]
-    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+    if commit is not None and not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("Use a full, lowercase 40-character commit SHA.")
     repo = manifest["repository"]
     if not re.fullmatch(r"[\w.-]+/[\w.-]+", repo):
@@ -80,6 +97,9 @@ def sync(commit=None):
     if local_path(license_path).exists() and license_path not in previous:
         raise ValueError(f"Untracked license destination: {license_path}")
 
+    commit = commit or latest_commit(repo)
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValueError("GitHub returned an invalid commit SHA.")
     url = f"https://codeload.github.com/{repo}/zip/{commit}"
     print(f"Downloading {repo}@{commit}")
     request = urllib.request.Request(url, headers={"User-Agent": "skills-vendor-sync"})
@@ -113,6 +133,11 @@ def sync(commit=None):
     if license_path not in incoming:
         raise ValueError("Missing upstream LICENSE.")
 
+    hashes = {name: digest(data) for name, data in sorted(incoming.items())}
+    if hashes == previous:
+        print("Imported files are unchanged; leaving files and provenance untouched.")
+        return
+
     # Validate the complete import before changing any repository files.
     for name, data in incoming.items():
         path = local_path(name)
@@ -122,14 +147,14 @@ def sync(commit=None):
     for name in previous.keys() - incoming.keys():
         local_path(name).unlink()
     manifest["commit"] = commit
-    manifest["files"] = {name: digest(data) for name, data in sorted(incoming.items())}
+    manifest["files"] = hashes
     MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(f"Synced {len(destinations)} skills and license ({len(incoming)} files). Review git diff before committing.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--commit", help="Update to a full upstream commit SHA; defaults to the pinned SHA.")
+    parser.add_argument("--commit", help="Optional full SHA override; defaults to the upstream default branch tip.")
     args = parser.parse_args()
     try:
         sync(args.commit)
