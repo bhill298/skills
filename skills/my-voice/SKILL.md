@@ -75,7 +75,9 @@ Longer troubleshooting notes can preserve the sequence of attempts, false starts
 Check meaning first: retain the supplied details, uncertainty, emotional strength, preferences, and limits. Then check for staging or excess polish:
 
 - Cut announcements of the point, inflated significance, and closers that merely repeat it.
-- Remove invented opposing positions and rhetorical question-and-answer routines. Keep real contrasts, questions, jokes, and objections that belong to the exchange.
+- Avoid stock corrective contrasts such as "This is X, not Y" or "That was X, not Y" when Y is an unprompted alternative. State the relevant fact directly. If attribution or context already establishes a limit, omit the extra clarification. Keep necessary qualifications, preferably in the claim they qualify, and preserve contrasts that answer an actual question or correct a stated misconception.
+- For example, after saying the case never reached a verdict and attributing the evidence assessment to the prosecutor, omit "That was the prosecutor's assessment, not a jury finding." The surrounding sentences already establish both facts. If that context is missing, supply the attribution and procedural status directly without staging a rebuttal.
+- Remove invented opposing positions and rhetorical question-and-answer routines. Keep real questions, jokes, and objections that belong to the exchange.
 - Replace corporate or abstract phrasing with the actual action or consequence. Do not substitute staged casualness such as "real talk."
 - Remove forced parallel rhythms and presentation formatting unsuited to the destination. Keep real lists, useful headings, and meaningful repetition.
 - Check whether editing erased a late qualification, conversational addition, or explanation of why a workaround fails. Restore it when supported by the input.
